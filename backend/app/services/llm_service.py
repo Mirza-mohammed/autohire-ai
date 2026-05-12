@@ -48,10 +48,25 @@ class LLMService:
         chain = prompt | self.parser_llm
         return chain.invoke({"job_description": job_description})
 
-    def tailor_resume(self, master_resume_json: Dict[str, Any], job_requirements: ExtractedJobRequirements) -> TailoredResume:
-        """Rewrite and reorder the master resume to align with the job requirements."""
+    def tailor_resume(self, master_resume_json: Dict[str, Any], job_requirements: ExtractedJobRequirements, historical_feedback: str = "") -> TailoredResume:
+        """Rewrite and reorder the master resume to align with the job requirements, using historical feedback."""
+        
+        system_prompt = (
+            "You are an expert career coach and resume writer. "
+            "You will be provided with a candidate's master resume and the parsed requirements for a target job. "
+            "Your task is to output a tailored resume. Rewrite bullet points to highlight relevant experience "
+            "using the required ATS keywords naturally. Ensure facts are NOT hallucinated; only emphasize and rephrase what already exists. Maximize the ATS match score."
+        )
+        
+        if historical_feedback:
+            system_prompt += (
+                f"\n\nIMPORTANT REINFORCEMENT FEEDBACK FROM RECENT REJECTIONS:\n"
+                f"{historical_feedback}\n"
+                f"You MUST adjust your tailoring strategy to address the above feedback."
+            )
+            
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are an expert career coach and resume writer. You will be provided with a candidate's master resume and the parsed requirements for a target job. Your task is to output a tailored resume. Rewrite bullet points to highlight relevant experience using the required ATS keywords naturally. Ensure facts are NOT hallucinated; only emphasize and rephrase what already exists. Maximize the ATS match score."),
+            ("system", system_prompt),
             ("human", "Candidate Master Resume:\n{resume}\n\nTarget Job Requirements:\n{requirements}\n\nProduce the tailored resume:")
         ])
         chain = prompt | self.tailoring_llm

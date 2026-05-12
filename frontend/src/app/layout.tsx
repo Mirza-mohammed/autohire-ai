@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Home, Briefcase, UserCircle, Settings, ChevronRight } from "lucide-react";
+import { Home, Briefcase, UserCircle, Settings, ChevronRight, BarChart3 } from "lucide-react";
+import Link from "next/link";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -27,10 +28,11 @@ export default function RootLayout({
           </div>
           
           <nav className="flex-1 px-4 space-y-2 mt-4">
-            <NavItem icon={<Home size={18} />} label="Dashboard" active />
-            <NavItem icon={<Briefcase size={18} />} label="Applications" />
-            <NavItem icon={<UserCircle size={18} />} label="Knowledge Base" />
-            <NavItem icon={<Settings size={18} />} label="Settings" />
+            <NavItem href="/" icon={<Home size={18} />} label="Dashboard" />
+            <NavItem href="/analytics" icon={<BarChart3 size={18} />} label="Analytics" />
+            <NavItem href="#" icon={<Briefcase size={18} />} label="Applications" />
+            <NavItem href="#" icon={<UserCircle size={18} />} label="Knowledge Base" />
+            <NavItem href="#" icon={<Settings size={18} />} label="Settings" />
           </nav>
 
           <div className="p-4 mt-auto">
@@ -57,11 +59,11 @@ export default function RootLayout({
   );
 }
 
-function NavItem({ icon, label, active = false }: { icon: React.ReactNode, label: string, active?: boolean }) {
+function NavItem({ href, icon, label, active = false }: { href: string, icon: React.ReactNode, label: string, active?: boolean }) {
   return (
-    <a href="#" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${active ? 'bg-white/10 text-white shadow-sm ring-1 ring-white/10' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}>
+    <Link href={href} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${active ? 'bg-white/10 text-white shadow-sm ring-1 ring-white/10' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}>
       {icon}
       <span className="text-sm font-medium">{label}</span>
-    </a>
+    </Link>
   );
 }

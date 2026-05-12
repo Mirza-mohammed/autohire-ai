@@ -54,6 +54,21 @@ class Application(Base):
     applied_resume = Column(JSON, default={})
     match_score = Column(Float, default=0.0)
     applied_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Analytics Fields
+    tailoring_score = Column(Float, nullable=True) # Score assigned during AI tailoring
+    time_to_apply = Column(Integer, nullable=True) # Time taken by Playwright in seconds
+    outcome_reason = Column(String, nullable=True) # e.g. "Missing MLOps keywords"
 
     user = relationship("User", back_populates="applications")
     job = relationship("JobPosting", back_populates="applications")
+
+class AnalyticsEvent(Base):
+    __tablename__ = "analytics_events"
+
+    id = Column(String, primary_key=True, default=generate_uuid, index=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    event_type = Column(String, index=True, nullable=False) # e.g., "form_submitted", "bot_blocked"
+    metadata_json = Column(JSON, default={})
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+

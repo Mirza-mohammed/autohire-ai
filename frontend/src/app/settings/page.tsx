@@ -79,7 +79,7 @@ export default function Settings() {
                 onChange={(e) => setMinMatch(parseInt(e.target.value))}
                 className="w-full accent-blue-500"
               />
-              <p className="text-xs text-zinc-500 mt-2">The AI will only Auto-Apply if the parsed job description matches your Master Resume >= {minMatch}%.</p>
+              <p className="text-xs text-zinc-500 mt-2">The AI will only Auto-Apply if the parsed job description matches your Master Resume &gt;= {minMatch}%.</p>
             </div>
             
             <div className="flex items-center justify-between p-4 bg-black/20 border border-white/5 rounded-xl">

@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7.2-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: always
+
+  api:
+    build: ./backend
+    container_name: autohire_api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    volumes:
+      - ./backend:/app
+      # Sync the sqlite DB for MVP, but normally use postgres
+      - ./backend/autohire.db:/app/autohire.db
+    ports:
+      - "8000:8000"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - redis
+    restart: always
+
+  worker:
+    build: ./backend
+    container_name: autohire_worker
+    command: celery -A app.core.celery_app worker --loglevel=info
+    volumes:
+      - ./backend:/app
+      - ./backend/autohire.db:/app/autohire.db
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PLAYWRIGHT_BROWSERS_PATH=0
+    depends_on:
+      - redis
+    restart: always
+    # Extra privileges needed for Chromium sandbox in some environments
+    cap_add:
+      - SYS_ADMIN
+
+volumes:
+  redis_data:

@@ -5,18 +5,33 @@ import random
 import os
 from app.automation.session_manager import SessionManager
 from app.automation.dynamic_selectors import dynamic_selector
+from app.services.pdf_generator import PDFGeneratorService
 
 def random_delay(min_ms=1000, max_ms=2500):
     time.sleep(random.uniform(min_ms, max_ms) / 1000)
 
 @celery_app.task
-def auto_apply_task(job_url: str, user_profile_data: dict, resume_pdf_path: str):
+def auto_apply_task(job_url: str, user_profile_data: dict, tailored_resume_data: dict = None):
     """
     Background task to automatically apply to a job using Playwright.
-    Includes advanced Handshake support.
+    Generates a dynamic PDF resume before applying.
     """
     print(f"[Auto-Apply] Starting auto-apply for {job_url}")
     
+    # Generate the dynamic PDF
+    pdf_service = PDFGeneratorService()
+    if not tailored_resume_data:
+        # Mock data if not provided by the pipeline
+        tailored_resume_data = {
+            "skills_to_highlight": ["Python", "Playwright", "Docker"],
+            "tailored_experience": [{"title": "Software Engineer", "company": "Tech Corp", "tailored_bullets": ["Built AI agents"]}]
+        }
+    
+    name = user_profile_data.get("first_name", "Test") + " " + user_profile_data.get("last_name", "User")
+    email = user_profile_data.get("email", "test@example.com")
+    resume_pdf_path = pdf_service.generate_ats_pdf(tailored_resume_data, name, email)
+    print(f"[Auto-Apply] Generated dynamic ATS PDF at: {resume_pdf_path}")
+
     session_mgr = SessionManager()
     
     with sync_playwright() as p:

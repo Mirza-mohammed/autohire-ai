@@ -3,6 +3,7 @@ import GoogleProvider from "next-auth/providers/google";
 import AppleProvider from "next-auth/providers/apple";
 import LinkedInProvider from "next-auth/providers/linkedin";
 import AzureADProvider from "next-auth/providers/azure-ad"; // Outlook/Microsoft
+import CredentialsProvider from "next-auth/providers/credentials";
 
 export const authOptions = {
   providers: [
@@ -36,6 +37,16 @@ export const authOptions = {
       clientSecret: process.env.AZURE_AD_CLIENT_SECRET || "placeholder_azure_client_secret",
       tenantId: process.env.AZURE_AD_TENANT_ID || "common",
     }),
+    CredentialsProvider({
+      name: "Mock MVP Login",
+      credentials: {
+        username: { label: "Mock Username (Type anything)", type: "text", placeholder: "mvp_tester" },
+      },
+      async authorize(credentials) {
+        // This is a mock provider so you can test the dashboard without Google API keys
+        return { id: "1", name: credentials?.username || "MVP Tester", email: "tester@autohire.ai" };
+      }
+    })
   ],
   pages: {
     signIn: '/login', // Redirect to custom login page

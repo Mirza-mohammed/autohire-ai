@@ -36,6 +36,15 @@ export default function Login() {
           <AuthButton provider="apple" name="Apple" icon="https://www.svgrepo.com/show/511330/apple-173.svg" invertIcon />
           <AuthButton provider="linkedin" name="LinkedIn" icon="https://www.svgrepo.com/show/448234/linkedin.svg" />
           <AuthButton provider="azure-ad" name="Outlook / Microsoft" icon="https://www.svgrepo.com/show/452236/microsoft.svg" />
+          
+          <div className="pt-4 mt-4 border-t border-white/10">
+            <button 
+              onClick={() => signIn("credentials", { username: "Developer Tester", callbackUrl: "/" })}
+              className="w-full flex items-center justify-center gap-3 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 transition-colors py-3 px-4 rounded-xl text-sm font-medium group"
+            >
+              Developer MVP Login (Bypass OAuth)
+            </button>
+          </div>
         </div>
 
         <p className="text-center text-xs text-zinc-500 mt-8">

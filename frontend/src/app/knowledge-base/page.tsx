@@ -1,13 +1,65 @@
 "use client";
 
-import { useState } from "react";
-import { UserCircle, Save, Plus, Trash2 } from "lucide-react";
+import { useState, useRef } from "react";
+import { UserCircle, Save, Plus, Trash2, UploadCloud, Loader2 } from "lucide-react";
 
 export default function KnowledgeBase() {
   const [skills, setSkills] = useState("Python, React, TypeScript, FastAPI, Playwright");
   const [experience, setExperience] = useState([
     { title: "Software Engineer", company: "Tech Innovators", dates: "2021 - Present", bullets: "Built robust web applications." }
   ]);
+  
+  const [profile, setProfile] = useState({
+    firstName: "Mohammad",
+    lastName: "Mirza",
+    email: "mohammad@example.com"
+  });
+
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("http://localhost:8000/api/resume/parse", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      
+      if (data.status === "success" && data.data) {
+        const parsed = data.data;
+        setProfile({
+          firstName: parsed.first_name || profile.firstName,
+          lastName: parsed.last_name || profile.lastName,
+          email: parsed.email || profile.email
+        });
+        setSkills(parsed.skills?.join(", ") || "");
+        
+        // Map extracted experience to UI format
+        if (parsed.experience && parsed.experience.length > 0) {
+          const newExp = parsed.experience.map((exp: any) => ({
+            title: exp.title || "",
+            company: exp.company || "",
+            dates: exp.dates || "",
+            bullets: exp.bullets || ""
+          }));
+          setExperience(newExp);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to parse resume:", error);
+      alert("Failed to parse resume. Ensure the backend is running.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const addExperience = () => {
     setExperience([...experience, { title: "", company: "", dates: "", bullets: "" }]);
@@ -30,6 +82,32 @@ export default function KnowledgeBase() {
         </button>
       </header>
 
+      {/* Upload Zone */}
+      <div className="mb-8 p-8 glass-card border border-dashed border-white/20 hover:border-blue-500/50 transition-colors rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer group" onClick={() => fileInputRef.current?.click()}>
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          onChange={handleFileUpload} 
+          accept=".pdf" 
+          className="hidden" 
+        />
+        {isUploading ? (
+          <>
+            <Loader2 size={32} className="text-blue-400 animate-spin mb-3" />
+            <h3 className="text-lg font-medium text-white">Extracting your history...</h3>
+            <p className="text-sm text-zinc-400 mt-1">OpenAI is parsing your PDF. This takes about 10 seconds.</p>
+          </>
+        ) : (
+          <>
+            <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mb-3 group-hover:bg-blue-500/20 transition-colors">
+              <UploadCloud size={24} className="text-blue-400" />
+            </div>
+            <h3 className="text-lg font-medium text-white">Upload Existing Resume (PDF)</h3>
+            <p className="text-sm text-zinc-400 mt-1">Skip the typing. Let the AI extract your skills and experience instantly.</p>
+          </>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Core Profile */}
         <div className="lg:col-span-1 space-y-6">
@@ -43,12 +121,16 @@ export default function KnowledgeBase() {
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-1">Full Name</label>
-                <input type="text" defaultValue="Mohammad Mirza" className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all" />
+                <label className="block text-sm font-medium text-zinc-400 mb-1">First Name</label>
+                <input type="text" value={profile.firstName} onChange={(e) => setProfile({...profile, firstName: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-400 mb-1">Last Name</label>
+                <input type="text" value={profile.lastName} onChange={(e) => setProfile({...profile, lastName: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-zinc-400 mb-1">Primary Email</label>
-                <input type="email" defaultValue="mohammad@example.com" className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all" />
+                <input type="email" value={profile.email} onChange={(e) => setProfile({...profile, email: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-zinc-400 mb-1">LinkedIn URL</label>

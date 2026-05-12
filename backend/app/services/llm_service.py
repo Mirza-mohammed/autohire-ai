@@ -74,6 +74,35 @@ class LLMService:
         res_str = json.dumps(master_resume_json)
         return chain.invoke({"resume": res_str, "requirements": req_str})
 
+    def parse_raw_resume(self, raw_text: str) -> dict:
+        """
+        Parses raw text from a PDF resume and converts it into structured Knowledge Base data.
+        """
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", "You are an expert resume parser. Extract the user's name, email, skills, and work experience from the following raw PDF text. Return it in the exact JSON schema provided."),
+            ("user", "{raw_text}")
+        ])
+
+        # Define the expected schema for the UI
+        class ParsedResume(BaseModel):
+            first_name: str = Field(description="The user's first name")
+            last_name: str = Field(description="The user's last name")
+            email: str = Field(description="The user's primary email address")
+            skills: List[str] = Field(description="A comprehensive list of all technical and soft skills found")
+            experience: List[dict] = Field(description="A list of objects containing 'title', 'company', 'dates', and 'bullets' (a single string combining all bullet points)")
+
+        parser = JsonOutputParser(pydantic_object=ParsedResume)
+        
+        chain = prompt | self.llm | parser
+        
+        try:
+            return chain.invoke({"raw_text": raw_text})
+        except Exception as e:
+            print(f"Error parsing raw resume: {e}")
+            return {
+                "first_name": "", "last_name": "", "email": "", "skills": [], "experience": []
+            }
+
     def generate_cover_letter(self, master_resume_json: Dict[str, Any], job_description: str, company_name: str, role_title: str) -> str:
         """Generate a personalized, modern cover letter."""
         prompt = ChatPromptTemplate.from_messages([

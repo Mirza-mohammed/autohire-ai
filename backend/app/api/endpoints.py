@@ -1,5 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, UploadFile, File
 from sqlalchemy.orm import Session
+import io
+import PyPDF2
 from typing import List
 
 from app.db.database import get_db
@@ -121,6 +123,36 @@ def create_application(
 def read_applications(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     apps = db.query(models.Application).offset(skip).limit(limit).all()
     return apps
+    
+@router.post("/resume/parse")
+async def parse_resume_pdf(file: UploadFile = File(...)):
+    """
+    Accepts a PDF resume, extracts the raw text using PyPDF2, 
+    and uses LLMService to parse it into structured Knowledge Base JSON.
+    """
+    if not file.filename.endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are supported")
+        
+    try:
+        content = await file.read()
+        pdf_reader = PyPDF2.PdfReader(io.BytesIO(content))
+        
+        raw_text = ""
+        for page in pdf_reader.pages:
+            raw_text += page.extract_text() + "\n"
+            
+        if not raw_text.strip():
+            raise HTTPException(status_code=400, detail="Could not extract text from the PDF. It might be a scanned image.")
+            
+        # Parse text with LangChain
+        from app.services.llm_service import LLMService
+        llm_service = LLMService()
+        parsed_data = llm_service.parse_raw_resume(raw_text)
+        
+        return {"status": "success", "data": parsed_data}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # --- AI Auto-Tailor ---
 @router.post("/jobs/{job_id}/tailor/{user_id}", response_model=schemas.Application)

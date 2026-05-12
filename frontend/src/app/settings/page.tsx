@@ -6,6 +6,17 @@ import { Save, ShieldAlert, Cpu, Globe } from "lucide-react";
 export default function Settings() {
   const [maxApps, setMaxApps] = useState(15);
   const [minMatch, setMinMatch] = useState(80);
+  
+  // Work Type Selections
+  const [workTypes, setWorkTypes] = useState(["Remote", "Hybrid"]);
+
+  const toggleWorkType = (type: string) => {
+    if (workTypes.includes(type)) {
+      setWorkTypes(workTypes.filter(t => t !== type));
+    } else {
+      setWorkTypes([...workTypes, type]);
+    }
+  };
 
   return (
     <div className="flex-1 p-8 overflow-y-auto">
@@ -107,19 +118,31 @@ export default function Settings() {
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-1">Work Type</label>
-              <select className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500/50 appearance-none">
-                <option>Remote Only</option>
-                <option>Hybrid</option>
-                <option>On-site</option>
-                <option>Any</option>
-              </select>
+              <label className="block text-sm font-medium text-zinc-400 mb-3">Work Type (Select multiple)</label>
+              <div className="flex flex-wrap gap-2">
+                {["Remote", "Hybrid", "On-site", "Any"].map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => toggleWorkType(type)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      workTypes.includes(type) 
+                        ? "bg-blue-600 text-white shadow-[0_0_10px_rgba(37,99,235,0.3)] border border-blue-500" 
+                        : "bg-white/5 text-zinc-400 border border-white/10 hover:bg-white/10"
+                    }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-1">Minimum Base Salary (USD)</label>
-              <input type="number" defaultValue="120000" className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500/50" />
+              <label className="block text-sm font-medium text-zinc-400 mb-3">Minimum Base Salary (GBP)</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-medium">£</span>
+                <input type="number" defaultValue="80000" className="w-full bg-black/20 border border-white/10 rounded-lg pl-8 pr-4 py-2.5 text-white focus:outline-none focus:border-blue-500/50" />
+              </div>
             </div>
           </div>
         </section>

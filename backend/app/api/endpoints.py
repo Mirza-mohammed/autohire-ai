@@ -6,6 +6,9 @@ from app.db.database import get_db
 from app.models import models
 from app.schemas import schemas
 from app.services.llm_service import llm_service, ExtractedJobRequirements
+from app.services.evaluation_agent import evaluation_agent
+from app.workers.scraper_tasks import scrape_job_board_task
+from app.workers.apply_tasks import auto_apply_task
 
 router = APIRouter()
 
@@ -170,3 +173,55 @@ def auto_tailor_and_apply(job_id: str, user_id: str, db: Session = Depends(get_d
     db.refresh(db_app)
     
     return db_app
+
+# --- Autonomous Background Tasks ---
+@router.post("/jobs/trigger-scrape/")
+def trigger_scrape(company_url: str):
+    """Trigger a background task to scrape a company careers page."""
+    task = scrape_job_board_task.delay(company_url)
+    return {"message": "Scrape task started", "task_id": task.id}
+
+@router.post("/jobs/{job_id}/evaluate/{user_id}")
+def evaluate_and_auto_apply(job_id: str, user_id: str, db: Session = Depends(get_db)):
+    """Evaluate a job and trigger Playwright auto-apply if the score passes."""
+    db_job = db.query(models.JobPosting).filter(models.JobPosting.id == job_id).first()
+    db_profile = db.query(models.Profile).filter(models.Profile.user_id == user_id).first()
+    
+    if not db_job or not db_profile:
+        raise HTTPException(status_code=404, detail="Job or User Profile not found")
+        
+    eval_result = evaluation_agent.evaluate_match(db_job.description, db_profile.master_resume_json)
+    
+    response = {
+        "score": eval_result.score,
+        "reasoning": eval_result.reasoning,
+        "passes": eval_result.passes_threshold,
+        "action": "none"
+    }
+    
+    if eval_result.passes_threshold:
+        # Generate the tailored resume first (synchronously or ideally in another task)
+        # For MVP, we do it here synchronously
+        if not db_job.extracted_reqs:
+            extracted = llm_service.parse_job_description(db_job.description)
+            db_job.extracted_reqs = extracted.model_dump()
+            db.commit()
+            
+        reqs = ExtractedJobRequirements(**db_job.extracted_reqs)
+        tailored_resume = llm_service.tailor_resume(db_profile.master_resume_json, reqs)
+        
+        # Save to disk temporarily for Playwright to upload
+        import json
+        import os
+        os.makedirs("tmp", exist_ok=True)
+        pdf_path = f"tmp/{user_id}_{job_id}_resume.pdf"
+        # Dummy PDF generation for MVP (just writing the JSON to a txt file pretending it's a PDF)
+        with open(pdf_path, "w") as f:
+            json.dump(tailored_resume.model_dump(), f)
+        
+        # Trigger Auto-Apply Task
+        task = auto_apply_task.delay(db_job.source_url, db_profile.user.preferences, pdf_path)
+        response["action"] = "auto_apply_triggered"
+        response["task_id"] = task.id
+        
+    return response

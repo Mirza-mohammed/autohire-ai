@@ -17,6 +17,19 @@ class PDFGeneratorService:
         filename = f"Resume_{candidate_name.replace(' ', '_')}_{str(uuid.uuid4())[:8]}.pdf"
         output_path = os.path.join(self.output_dir, filename)
 
+        return self._print_pdf(html_content, output_path)
+
+    def generate_cover_letter_pdf(self, content: str, candidate_name: str, candidate_email: str) -> str:
+        """
+        Takes raw string content and generates a formal business cover letter PDF.
+        """
+        html_content = self._build_cover_letter_template(content, candidate_name, candidate_email)
+        filename = f"CoverLetter_{candidate_name.replace(' ', '_')}_{str(uuid.uuid4())[:8]}.pdf"
+        output_path = os.path.join(self.output_dir, filename)
+        
+        return self._print_pdf(html_content, output_path)
+
+    def _print_pdf(self, html_content: str, output_path: str) -> str:
         with sync_playwright() as p:
             # We use chromium headless to print the HTML exactly as it would appear on a page
             browser = p.chromium.launch(headless=True)
@@ -121,6 +134,63 @@ class PDFGeneratorService:
             <h2>Professional Experience</h2>
             {exp_html}
 
+        </body>
+        </html>
+        """
+        return html
+
+    def _build_cover_letter_template(self, content: str, name: str, email: str) -> str:
+        """
+        Generates clean, formal HTML for a cover letter.
+        """
+        # Convert newlines to paragraphs
+        paragraphs = "".join([f"<p>{p.strip()}</p>" for p in content.split("\n\n") if p.strip()])
+        
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{
+                    font-family: "Times New Roman", Times, serif;
+                    font-size: 11pt;
+                    line-height: 1.5;
+                    color: #000;
+                    margin: 0;
+                    padding: 0;
+                }}
+                .header {{
+                    text-align: center;
+                    margin-bottom: 40px;
+                    border-bottom: 1px solid #000;
+                    padding-bottom: 20px;
+                }}
+                h1 {{
+                    font-size: 24pt;
+                    margin-bottom: 5px;
+                    font-weight: normal;
+                }}
+                .contact-info {{
+                    font-size: 10pt;
+                }}
+                .content {{
+                    text-align: justify;
+                }}
+                p {{
+                    margin-bottom: 15px;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>{name}</h1>
+                <div class="contact-info">
+                    {email} | https://linkedin.com/in/candidate
+                </div>
+            </div>
+            <div class="content">
+                {paragraphs}
+            </div>
         </body>
         </html>
         """

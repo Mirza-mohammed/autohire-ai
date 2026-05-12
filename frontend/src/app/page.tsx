@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Play, Sparkles, CheckCircle2, Clock, XCircle, ChevronRight, Briefcase } from "lucide-react";
+import TerminalLog from "@/components/TerminalLog";
 
 export default function Dashboard() {
   const [url, setUrl] = useState("");
@@ -119,6 +120,7 @@ export default function Dashboard() {
         </div>
       </div>
 
+      <TerminalLog />
     </div>
   );
 }

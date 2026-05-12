@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Home, Briefcase, UserCircle, Settings, ChevronRight, BarChart3 } from "lucide-react";
 import Link from "next/link";
+import SessionWrapper from "@/components/SessionWrapper";
+import UserProfileBadge from "@/components/UserProfileBadge";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,7 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${inter.className} bg-background text-foreground min-h-screen flex antialiased`}>
-        
+        <SessionWrapper>
         {/* Sidebar */}
         <aside className="w-64 glass border-r border-white/5 flex flex-col hidden md:flex h-screen sticky top-0">
           <div className="p-6">
@@ -36,16 +38,7 @@ export default function RootLayout({
           </nav>
 
           <div className="p-4 mt-auto">
-            <div className="glass-card rounded-xl p-4 flex items-center gap-3 cursor-pointer group">
-              <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
-                <UserCircle size={16} className="text-blue-400" />
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <p className="text-sm font-medium truncate">Guest User</p>
-                <p className="text-xs text-muted-foreground truncate">MVP Mode</p>
-              </div>
-              <ChevronRight size={16} className="text-muted-foreground group-hover:text-white transition-colors" />
-            </div>
+            <UserProfileBadge />
           </div>
         </aside>
 
@@ -54,6 +47,7 @@ export default function RootLayout({
           {children}
         </main>
         
+        </SessionWrapper>
       </body>
     </html>
   );

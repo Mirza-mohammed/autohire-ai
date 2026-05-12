@@ -32,9 +32,9 @@ export default function RootLayout({
           <nav className="flex-1 px-4 space-y-2 mt-4">
             <NavItem href="/" icon={<Home size={18} />} label="Dashboard" />
             <NavItem href="/analytics" icon={<BarChart3 size={18} />} label="Analytics" />
-            <NavItem href="#" icon={<Briefcase size={18} />} label="Applications" />
-            <NavItem href="#" icon={<UserCircle size={18} />} label="Knowledge Base" />
-            <NavItem href="#" icon={<Settings size={18} />} label="Settings" />
+            <NavItem href="/applications" icon={<Briefcase size={18} />} label="Applications" />
+            <NavItem href="/knowledge-base" icon={<UserCircle size={18} />} label="Knowledge Base" />
+            <NavItem href="/settings" icon={<Settings size={18} />} label="Settings" />
           </nav>
 
           <div className="p-4 mt-auto">

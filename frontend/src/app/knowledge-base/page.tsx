@@ -27,7 +27,7 @@ export default function KnowledgeBase() {
     formData.append("file", file);
 
     try {
-      const response = await fetch("http://localhost:8000/api/resume/parse", {
+      const response = await fetch("http://localhost:8000/api/v1/resume/parse", {
         method: "POST",
         body: formData,
       });

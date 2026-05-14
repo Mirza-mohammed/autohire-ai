@@ -4,7 +4,7 @@ from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
+from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 
 # --- Pydantic Output Schemas ---
 class ExtractedJobRequirements(BaseModel):
@@ -32,14 +32,27 @@ class CoverLetterOutput(BaseModel):
 
 class LLMService:
     def __init__(self):
-        # We assume OPENAI_API_KEY is set in the environment or .env file
-        self.llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
-        self.creative_llm = ChatOpenAI(model="gpt-4o", temperature=0.7)
-        
-        self.parser_llm = self.llm.with_structured_output(ExtractedJobRequirements)
-        self.tailoring_llm = self.llm.with_structured_output(TailoredResume)
+        self.is_mock = False
+        try:
+            # Try to initialize OpenAI if key is present
+            self.llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
+            self.creative_llm = ChatOpenAI(model="gpt-4o", temperature=0.7)
+            self.parser_llm = self.llm.with_structured_output(ExtractedJobRequirements)
+            self.tailoring_llm = self.llm.with_structured_output(TailoredResume)
+        except Exception as e:
+            print(f"[!] Warning: OpenAI API Key not found. Running LLMService in MOCK mode.")
+            self.is_mock = True
 
     def parse_job_description(self, job_description: str) -> ExtractedJobRequirements:
+        if self.is_mock:
+            return ExtractedJobRequirements(
+                required_skills=["Python", "React", "Docker"],
+                preferred_skills=["AWS", "Redis"],
+                soft_skills=["Communication", "Teamwork"],
+                years_of_experience=3,
+                education_level="Bachelors",
+                ats_keywords=["Python", "React", "Docker"]
+            )
         """Extract structured requirements from a raw job description string."""
         prompt = ChatPromptTemplate.from_messages([
             ("system", "You are an expert technical recruiter and ATS specialist. Extract the core requirements, skills, and ATS keywords from the following job description. Be precise and exhaustive."),
@@ -50,6 +63,13 @@ class LLMService:
 
     def tailor_resume(self, master_resume_json: Dict[str, Any], job_requirements: ExtractedJobRequirements, historical_feedback: str = "") -> TailoredResume:
         """Rewrite and reorder the master resume to align with the job requirements, using historical feedback."""
+        if self.is_mock:
+            return TailoredResume(
+                summary="Passionate software engineer experienced with React and Python.",
+                skills=["Python", "React", "Docker"],
+                experience=[TailoredResumeSection(title="Software Developer", company="MockCorp", date_range="2021-Present", bullets=["Built amazing things."])],
+                projects=[]
+            )
         
         system_prompt = (
             "You are an expert career coach and resume writer. "
@@ -78,6 +98,28 @@ class LLMService:
         """
         Parses raw text from a PDF resume and converts it into structured Knowledge Base data.
         """
+        if self.is_mock:
+            return {
+                "first_name": "Demo",
+                "last_name": "User",
+                "email": "demo@example.com",
+                "skills": ["JavaScript", "Python", "TailwindCSS", "Node.js", "Docker"],
+                "experience": [
+                    {
+                        "title": "Senior Frontend Engineer",
+                        "company": "Tech Startup Inc.",
+                        "dates": "Jan 2022 - Present",
+                        "bullets": "Led the development of a React dashboard. Optimized rendering performance by 40%."
+                    },
+                    {
+                        "title": "Web Developer",
+                        "company": "Digital Agency",
+                        "dates": "Mar 2019 - Dec 2021",
+                        "bullets": "Created responsive e-commerce websites. Integrated payment gateways."
+                    }
+                ]
+            }
+
         prompt = ChatPromptTemplate.from_messages([
             ("system", "You are an expert resume parser. Extract the user's name, email, skills, and work experience from the following raw PDF text. Return it in the exact JSON schema provided."),
             ("user", "{raw_text}")
@@ -105,6 +147,8 @@ class LLMService:
 
     def generate_cover_letter(self, master_resume_json: Dict[str, Any], job_description: str, company_name: str, role_title: str) -> str:
         """Generate a personalized, modern cover letter."""
+        if self.is_mock:
+            return f"Dear Hiring Manager at {company_name},\n\nI am thrilled to apply for the {role_title} position. Given my background, I believe I would be an excellent fit for your team.\n\nThank you for your consideration.\n\nBest regards,\nDemo User"
         prompt = ChatPromptTemplate.from_messages([
             ("system", "You are an expert executive communicator. Write a concise, modern, and compelling cover letter. Avoid robotic or overly formal 'AI' language (e.g., 'I am writing to express my interest'). Start strong, align the candidate's top 2 achievements with the company's needs, and close with a clear call to action. Keep it under 300 words."),
             ("human", "Company: {company}\nRole: {role}\nJob Description: {jd}\nCandidate Info: {resume}\n\nWrite the cover letter text:")

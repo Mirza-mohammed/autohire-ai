@@ -11,8 +11,12 @@ class SelectorPrediction(BaseModel):
 
 class DynamicSelectorEngine:
     def __init__(self):
-        self.llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-        self.structured_llm = self.llm.with_structured_output(SelectorPrediction)
+        self.is_mock = False
+        try:
+            self.llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+            self.structured_llm = self.llm.with_structured_output(SelectorPrediction)
+        except Exception:
+            self.is_mock = True
         
     def clean_html(self, raw_html: str) -> str:
         """Strip scripts, styles, and SVGs to save tokens before sending to LLM."""
@@ -33,6 +37,10 @@ class DynamicSelectorEngine:
         """
         Uses an LLM to predict the CSS/Text selector for an element described by natural language.
         """
+        if self.is_mock:
+            print(f"[*] [MOCK] Asking AI for selector for: '{element_description}'")
+            return "button"
+
         cleaned_html = self.clean_html(raw_html)
         
         # If the HTML is still too huge, we should ideally chunk it or only take the body.
